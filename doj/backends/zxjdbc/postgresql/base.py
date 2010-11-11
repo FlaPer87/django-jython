@@ -66,12 +66,12 @@ class DatabaseWrapper(zxJDBCDatabaseWrapper):
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
-        self.features = DatabaseFeatures()
-        self.ops = DatabaseOperations()
+        self.features = DatabaseFeatures(self)
+        self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
-        self.validation = BaseDatabaseValidation()
+        self.validation = BaseDatabaseValidation(self)
 
     def _cursor(self):
         if self.connection is None:

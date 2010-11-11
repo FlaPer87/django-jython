@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import django
 from java.sql import Connection
 from com.ziclix.python.sql import zxJDBC
 from django.db.backends import BaseDatabaseWrapper
@@ -12,13 +13,19 @@ class zxJDBCDatabaseWrapper(BaseDatabaseWrapper):
 
     def __init__(self, *args, **kwargs):
         super(zxJDBCDatabaseWrapper, self).__init__(*args, **kwargs)
+        self.django_settings_compatibility()
 
     def jdbc_url(self):
         return self.jdbc_url_pattern % self.settings_dict_postprocesed()
 
+    def django_settings_compatibility(self):
+        if django.VERSION[1] >= 2:
+            for k in ["HOST", "PORT", "USER", "PASSWORD", "ENGINE", "NAME", "OPTIONS"]:
+                self.settings_dict["DATABASE_%s" % k] = self.settings_dict[k]
+                
     def settings_dict_postprocesed(self):
         settings_dict = self.settings_dict.copy() # Avoid messing with the
-                                                  # original settings
+                                                  # original settings                
         host, port = settings_dict['DATABASE_HOST'], settings_dict['DATABASE_PORT']
         if not host:
             settings_dict['DATABASE_HOST'] = self.default_host
@@ -26,13 +33,14 @@ class zxJDBCDatabaseWrapper(BaseDatabaseWrapper):
             settings_dict['DATABASE_PORT'] = ":%s" % port
         elif self.default_port:
             settings_dict['DATABASE_PORT'] = ":%s" % self.default_port
+        
         return settings_dict
 
     def new_connection(self):
         connection = self.new_jndi_connection()
         if not connection:
             settings_dict = self.settings_dict
-            if settings_dict['DATABASE_NAME'] == '':
+            if not settings_dict['DATABASE_NAME']:
                 from django.core.exceptions import ImproperlyConfigured
                 raise ImproperlyConfigured(
                     "You need to specify DATABASE_NAME in your Django settings file.")

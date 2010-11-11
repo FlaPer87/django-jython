@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 setup(
     name = "django-jython",
     version = "1.1.2-alpha",
